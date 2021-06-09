@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/internal/pool"
+	"github.com/jsurdilla/redis/internal/pool"
 )
 
 // Limiter is the interface of a rate limiter or a circuit breaker.
@@ -222,5 +222,6 @@ func newConnPool(opt *Options) *pool.ConnPool {
 		PoolTimeout:        opt.PoolTimeout,
 		IdleTimeout:        opt.IdleTimeout,
 		IdleCheckFrequency: opt.IdleCheckFrequency,
+		Id:                 fmt.Sprintf("%s/%d", opt.Addr, opt.DB),
 	})
 }
