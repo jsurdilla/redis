@@ -2,12 +2,13 @@ package pool
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/internal"
+	"github.com/jsurdilla/redis/internal"
 )
 
 var ErrClosed = errors.New("redis: client is closed")
@@ -57,6 +58,7 @@ type Options struct {
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
+	Id                 string
 }
 
 type ConnPool struct {
@@ -98,6 +100,30 @@ func NewConnPool(opt *Options) *ConnPool {
 	if opt.IdleTimeout > 0 && opt.IdleCheckFrequency > 0 {
 		go p.reaper(opt.IdleCheckFrequency)
 	}
+
+	go func() {
+		for {
+			time.Sleep(60 * time.Second)
+
+			p.connsMu.Lock()
+			n := len(p.conns)
+			nIdle := len(p.idleConns)
+			idleConnsLen := p.idleConnsLen
+			p.connsMu.Unlock()
+
+			fmt.Printf("[%s] go-redis debug: len(conns): %d, len(idleConns): %d, idleConnsLen: %d\n", opt.Id, n, nIdle, idleConnsLen)
+			for _, conn := range p.idleConns {
+				fmt.Printf("[%s] go-redis debug: conndump: %p: used @ %s (age: %s, stale: %t)\n",
+					opt.Id,
+					conn,
+					conn.UsedAt(),
+					time.Since(conn.UsedAt()),
+					p.isStaleConn(conn),
+				)
+
+			}
+		}
+	}()
 
 	return p
 }
@@ -216,6 +242,7 @@ func (p *ConnPool) Get() (*Conn, error) {
 
 	for {
 		p.connsMu.Lock()
+
 		cn := p.popIdle()
 		p.connsMu.Unlock()
 
@@ -456,6 +483,7 @@ func (p *ConnPool) reaper(frequency time.Duration) {
 			continue
 		}
 		atomic.AddUint32(&p.stats.StaleConns, uint32(n))
+		fmt.Printf("[%s] go-redis debug: reaper: reaped %d connections\n", p.opt.Id, n)
 	}
 }
 
