@@ -245,5 +245,6 @@ func newConnPool(opt *Options) *pool.ConnPool {
 		PoolTimeout:        opt.PoolTimeout,
 		IdleTimeout:        opt.IdleTimeout,
 		IdleCheckFrequency: opt.IdleCheckFrequency,
+		Id:                 fmt.Sprintf("%s/%d", opt.Addr, opt.DB),
 	})
 }
