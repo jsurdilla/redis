@@ -6,8 +6,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-redis/redis/v7/internal/pool"
-	"github.com/go-redis/redis/v7/internal/proto"
+	"github.com/jsurdilla/redis/v7/internal/pool"
+	"github.com/jsurdilla/redis/v7/internal/proto"
 )
 
 var ErrClosed = pool.ErrClosed
